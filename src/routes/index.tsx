@@ -88,6 +88,45 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLicense, setEditingLicense] = useState<License | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFields, setEditFields] = useState({
+    user_name: "",
+    status: "active" as License['status'],
+    license_type: "paid" as License['license_type'],
+    lifetime: false,
+    expires_days: 0,
+    expires_minutes: 0,
+    clear_device: false
+  });
+
+  const fetchLicenses = async () => {
+    try {
+      setIsTableLoading(true);
+      const res = await apiCall("list_licenses", { search: "", status: "" });
+      if (res.ok) {
+        setLicenses(res.licenses);
+      }
+    } catch (err) {
+      console.error("Fetch licenses error:", err);
+    } finally {
+      setIsTableLoading(false);
+    }
+  };
+
+  const refreshStats = async () => {
+    try {
+      const res = await apiCall("stats", {});
+      if (res.ok) {
+        setStats(res.stats);
+      }
+    } catch (err) {
+      console.error("Stats error:", err);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     const email = localStorage.getItem("admin_email") || "";
@@ -102,7 +141,6 @@ function Dashboard() {
     const initDashboard = async () => {
       try {
         setIsTableLoading(true);
-        // Chamadas em paralelo
         const [meRes, statsRes, licensesRes] = await Promise.all([
           apiCall("me", {}),
           apiCall("stats", {}),
@@ -127,6 +165,65 @@ function Dashboard() {
 
     initDashboard();
   }, [navigate]);
+
+  const handleEditClick = async (license_key: string) => {
+    try {
+      setIsTableLoading(true);
+      const res = await apiCall("get_license", { license_key });
+      if (res.ok && res.license) {
+        const l = res.license;
+        setEditingLicense(l);
+        setEditFields({
+          user_name: l.user_name || "",
+          status: l.status,
+          license_type: l.license_type,
+          lifetime: l.lifetime,
+          expires_days: 0,
+          expires_minutes: 0,
+          clear_device: false
+        });
+        setIsEditModalOpen(true);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao carregar dados da licença");
+    } finally {
+      setIsTableLoading(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLicense) return;
+    
+    setEditLoading(true);
+    try {
+      const fields: any = {
+        user_name: editFields.user_name,
+        status: editFields.status,
+        license_type: editFields.license_type,
+        lifetime: editFields.lifetime
+      };
+
+      if (editFields.expires_days > 0) fields.expires_days = editFields.expires_days;
+      if (editFields.expires_minutes > 0) fields.expires_minutes = editFields.expires_minutes;
+      if (editFields.clear_device) fields.clear_device = true;
+
+      const res = await apiCall("update_license", { 
+        license_key: editingLicense.license_key, 
+        fields 
+      });
+
+      if (res.ok) {
+        toast.success("Chave atualizada!");
+        setIsEditModalOpen(false);
+        fetchLicenses();
+        refreshStats();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar licença");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
