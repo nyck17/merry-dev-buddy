@@ -237,6 +237,50 @@ function Dashboard() {
     }
   };
 
+  const handleCreateLicense = async () => {
+    if (!createFields.lifetime && createFields.expires_days === 0 && createFields.expires_minutes === 0) {
+      toast.error("Defina uma duração.");
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      const res = await apiCall("create_license", createFields);
+
+      if (res.ok) {
+        const newKey = res.license.license_key;
+        toast.success("Chave criada com sucesso!", {
+          action: {
+            label: "Copiar chave",
+            onClick: () => {
+              navigator.clipboard.writeText(newKey);
+              toast.success("Copiado!");
+            },
+          },
+        });
+        setIsCreateModalOpen(false);
+        setCreateFields({
+          user_name: "",
+          license_type: "paid",
+          lifetime: false,
+          expires_days: 30,
+          expires_minutes: 0,
+          custom_key: ""
+        });
+        fetchLicenses();
+        refreshStats();
+      }
+    } catch (err: any) {
+      if (err.message === "key_in_use") {
+        toast.error("Esta chave já existe.");
+      } else {
+        toast.error(err.message || "Erro ao criar licença");
+      }
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copiado para a área de transferência!");
