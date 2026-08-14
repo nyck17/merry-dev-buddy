@@ -1,6 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { apiCall } from "@/lib/api";
 import { 
   Key, 
@@ -10,9 +27,17 @@ import {
   LogOut, 
   Plus, 
   User,
-  Loader2
+  Loader2,
+  Copy,
+  Search,
+  Edit2,
+  Trash2,
+  ExternalLink,
+  Laptop
 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -25,12 +50,34 @@ interface Stats {
   lifetime: number;
 }
 
+interface License {
+  id: number;
+  license_key: string;
+  user_name: string | null;
+  status: 'active' | 'inactive' | 'suspended';
+  license_type: 'paid' | 'trial';
+  lifetime: boolean;
+  expires_at: string | null;
+  activated_at: string | null;
+  device_id: string | null;
+  session_id: string | null;
+  last_seen: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -45,27 +92,51 @@ function Dashboard() {
 
     const initDashboard = async () => {
       try {
+        setIsTableLoading(true);
         // Chamadas em paralelo
-        const [meRes, statsRes] = await Promise.all([
+        const [meRes, statsRes, licensesRes] = await Promise.all([
           apiCall("me", {}),
-          apiCall("stats", {})
+          apiCall("stats", {}),
+          apiCall("list_licenses", { search: "", status: "" })
         ]);
 
         if (meRes.ok && statsRes.ok) {
           setIsAuthenticated(true);
           setStats(statsRes.stats);
         }
+
+        if (licensesRes.ok) {
+          setLicenses(licensesRes.licenses);
+        }
       } catch (err: any) {
-        // Erro 401 já é tratado no apiCall recarregando a página,
-        // mas tratamos erros genéricos aqui
         console.error("Dashboard init error:", err);
       } finally {
         setIsLoading(false);
+        setIsTableLoading(false);
       }
     };
 
     initDashboard();
   }, [navigate]);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência!");
+  };
+
+  const filteredLicenses = useMemo(() => {
+    return licenses.filter(license => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        license.license_key.toLowerCase().includes(search) ||
+        (license.user_name?.toLowerCase().includes(search) || false) ||
+        (license.device_id?.toLowerCase().includes(search) || false);
+      
+      const matchesStatus = statusFilter === "all" || license.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [licenses, searchTerm, statusFilter]);
 
   const handleLogout = async () => {
     try {
@@ -178,9 +249,161 @@ function Dashboard() {
           </Button>
         </div>
         
-        {/* Table placeholder for next phase */}
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl h-64 flex items-center justify-center text-zinc-500 italic">
-          Listagem de chaves será implementada na próxima fase...
+        {/* Filters and Table */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="p-4 border-b border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+              <Input
+                placeholder="Buscar por chave, cliente ou dispositivo..."
+                className="bg-zinc-950 border-zinc-800 pl-10 h-10 text-sm focus-visible:ring-violet-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px] bg-zinc-950 border-zinc-800 h-10 text-sm">
+                  <SelectValue placeholder="Filtrar por Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="active">Ativas</SelectItem>
+                  <SelectItem value="suspended">Suspensas</SelectItem>
+                  <SelectItem value="inactive">Inativas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="relative overflow-x-auto">
+            {isTableLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
+              </div>
+            ) : filteredLicenses.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center text-zinc-500 gap-2">
+                <AlertCircle className="h-8 w-8 opacity-20" />
+                <p>Nenhuma licença encontrada.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-zinc-950/50">
+                  <TableRow className="border-zinc-800 hover:bg-transparent">
+                    <TableHead className="text-zinc-400 font-medium">Chave</TableHead>
+                    <TableHead className="text-zinc-400 font-medium">Cliente</TableHead>
+                    <TableHead className="text-zinc-400 font-medium">Tipo</TableHead>
+                    <TableHead className="text-zinc-400 font-medium">Status</TableHead>
+                    <TableHead className="text-zinc-400 font-medium">Expira em</TableHead>
+                    <TableHead className="text-zinc-400 font-medium">Dispositivo</TableHead>
+                    <TableHead className="text-zinc-400 font-medium text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLicenses.map((license) => (
+                    <TableRow 
+                      key={license.id} 
+                      className="border-zinc-800 hover:bg-zinc-800/30 transition-colors group"
+                    >
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <code className="bg-zinc-950 px-2 py-1 rounded text-violet-300 font-mono text-xs border border-zinc-800">
+                            {license.license_key}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800"
+                            onClick={() => copyToClipboard(license.license_key)}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-zinc-300 font-medium">
+                        {license.user_name || "—"}
+                      </TableCell>
+                      <TableCell>
+                        {license.license_type === 'paid' ? (
+                          <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/15">
+                            Pago
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-zinc-500 border-zinc-800">
+                            Trial
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {license.status === 'active' && (
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
+                            Ativa
+                          </Badge>
+                        )}
+                        {license.status === 'suspended' && (
+                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
+                            Suspensa
+                          </Badge>
+                        )}
+                        {license.status === 'inactive' && (
+                          <Badge className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/15">
+                            Inativa
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {license.lifetime ? (
+                          <span className="text-violet-400 font-medium flex items-center gap-1.5">
+                            <Infinity className="h-3.5 w-3.5" />
+                            Vitalícia
+                          </span>
+                        ) : (
+                          <span className="text-zinc-400 text-sm">
+                            {license.expires_at 
+                              ? format(new Date(license.expires_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                              : "—"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-zinc-500 text-sm">
+                          {license.device_id ? (
+                            <>
+                              <Laptop className="h-3.5 w-3.5" />
+                              <span className="truncate max-w-[100px]" title={license.device_id}>
+                                {license.device_id.substring(0, 8)}...
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-zinc-600 italic">Livre</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
       </main>
     </div>
