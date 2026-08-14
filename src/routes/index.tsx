@@ -102,6 +102,18 @@ function Dashboard() {
     clear_device: false
   });
 
+  // Create Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createFields, setCreateFields] = useState({
+    user_name: "",
+    license_type: "paid" as License['license_type'],
+    lifetime: false,
+    expires_days: 30,
+    expires_minutes: 0,
+    custom_key: ""
+  });
+
   const fetchLicenses = async () => {
     try {
       setIsTableLoading(true);
