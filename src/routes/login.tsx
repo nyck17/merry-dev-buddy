@@ -22,7 +22,6 @@ function LoginComponent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const data = await apiCall("login", { email, password });
