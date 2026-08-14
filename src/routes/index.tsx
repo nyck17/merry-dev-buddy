@@ -340,6 +340,7 @@ function Dashboard() {
           <div className="flex items-center gap-4">
             <Button 
               size="sm" 
+              onClick={() => setIsCreateModalOpen(true)}
               className="bg-violet-600 hover:bg-violet-700 hidden sm:flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
