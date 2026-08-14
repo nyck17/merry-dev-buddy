@@ -381,6 +381,64 @@ function Dashboard() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (passwordFields.new_password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (passwordFields.new_password !== passwordFields.confirm_password) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await apiCall("change_password", { new_password: passwordFields.new_password });
+      if (res.ok) {
+        toast.success("Senha alterada! Faça login novamente.");
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_email");
+        setIsPasswordModalOpen(false);
+        navigate({ to: "/login" });
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar senha");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleRegisterAdmin = async () => {
+    if (!registerFields.email.includes("@")) {
+      toast.error("E-mail inválido.");
+      return;
+    }
+    if (registerFields.password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    setRegisterLoading(true);
+    try {
+      const res = await apiCall("register_admin", registerFields);
+      if (res.ok) {
+        toast.success("Admin cadastrado!");
+        setIsRegisterModalOpen(false);
+        setRegisterFields({ email: "", password: "" });
+      }
+    } catch (err: any) {
+      if (err.message === "email_in_use") {
+        toast.error("Este email já está em uso.");
+      } else if (err.message === "invalid_data") {
+        toast.error("Dados inválidos.");
+      } else {
+        toast.error("Erro ao cadastrar.");
+      }
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
   if (isAuthenticated === false) return null;
   
   if (isLoading) {
