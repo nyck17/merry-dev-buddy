@@ -50,12 +50,34 @@ interface Stats {
   lifetime: number;
 }
 
+interface License {
+  id: number;
+  license_key: string;
+  user_name: string | null;
+  status: 'active' | 'inactive' | 'suspended';
+  license_type: 'paid' | 'trial';
+  lifetime: boolean;
+  expires_at: string | null;
+  activated_at: string | null;
+  device_id: string | null;
+  session_id: string | null;
+  last_seen: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
