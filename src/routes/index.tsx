@@ -310,7 +310,10 @@ function Dashboard() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado para a área de transferência!");
+    toast.success("Chave copiada!", {
+      duration: 2000,
+      description: "A chave foi enviada para sua área de transferência."
+    });
   };
 
   const filteredLicenses = useMemo(() => {
