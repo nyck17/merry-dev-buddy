@@ -480,14 +480,55 @@ function Dashboard() {
                 <span className="text-sm font-medium text-zinc-200">{adminEmail}</span>
                 <span className="text-xs text-zinc-500 italic">Administrador</span>
               </div>
-              <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-zinc-700">
-                <User className="h-5 w-5" />
-              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 overflow-hidden border border-zinc-700 bg-zinc-800 hover:bg-zinc-700">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-transparent text-zinc-400 font-medium uppercase">
+                        {adminEmail ? adminEmail.charAt(0) : <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 text-zinc-100" align="end" sideOffset={8}>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{adminEmail}</p>
+                      <p className="text-xs leading-none text-zinc-500 italic">Administrador</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem 
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="focus:bg-violet-500/10 focus:text-violet-400 cursor-pointer"
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    <span>Trocar senha</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setIsRegisterModalOpen(true)}
+                    className="focus:bg-violet-500/10 focus:text-violet-400 cursor-pointer"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Cadastrar novo admin</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="focus:bg-red-500/10 focus:text-red-400 cursor-pointer text-red-400"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair da conta</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={handleLogout}
-                className="text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+                className="text-zinc-400 hover:text-red-400 hover:bg-red-400/10 hidden sm:flex"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
