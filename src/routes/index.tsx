@@ -1038,6 +1038,108 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Change Password Modal */}
+      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Lock className="h-5 w-5 text-violet-400" />
+              Trocar Senha
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Nova senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={passwordFields.new_password}
+                onChange={(e) => setPasswordFields({ ...passwordFields, new_password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmar senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={passwordFields.confirm_password}
+                onChange={(e) => setPasswordFields({ ...passwordFields, confirm_password: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsPasswordModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={passwordLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Register Admin Modal */}
+      <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-violet-400" />
+              Cadastrar Novo Admin
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                placeholder="exemplo@admin.com"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.email}
+                onChange={(e) => setRegisterFields({ ...registerFields, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.password}
+                onChange={(e) => setRegisterFields({ ...registerFields, password: e.target.value })}
+              />
+              <p className="text-xs text-zinc-500">Mínimo 6 caracteres.</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRegisterAdmin}
+              disabled={registerLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {registerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cadastrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
