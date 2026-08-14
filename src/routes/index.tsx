@@ -92,27 +92,51 @@ function Dashboard() {
 
     const initDashboard = async () => {
       try {
+        setIsTableLoading(true);
         // Chamadas em paralelo
-        const [meRes, statsRes] = await Promise.all([
+        const [meRes, statsRes, licensesRes] = await Promise.all([
           apiCall("me", {}),
-          apiCall("stats", {})
+          apiCall("stats", {}),
+          apiCall("list_licenses", { search: "", status: "" })
         ]);
 
         if (meRes.ok && statsRes.ok) {
           setIsAuthenticated(true);
           setStats(statsRes.stats);
         }
+
+        if (licensesRes.ok) {
+          setLicenses(licensesRes.licenses);
+        }
       } catch (err: any) {
-        // Erro 401 já é tratado no apiCall recarregando a página,
-        // mas tratamos erros genéricos aqui
         console.error("Dashboard init error:", err);
       } finally {
         setIsLoading(false);
+        setIsTableLoading(false);
       }
     };
 
     initDashboard();
   }, [navigate]);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência!");
+  };
+
+  const filteredLicenses = useMemo(() => {
+    return licenses.filter(license => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        license.license_key.toLowerCase().includes(search) ||
+        (license.user_name?.toLowerCase().includes(search) || false) ||
+        (license.device_id?.toLowerCase().includes(search) || false);
+      
+      const matchesStatus = statusFilter === "all" || license.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [licenses, searchTerm, statusFilter]);
 
   const handleLogout = async () => {
     try {
