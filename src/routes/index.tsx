@@ -850,6 +850,54 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-400">
+              <Trash2 className="h-5 w-5" />
+              Excluir Chave
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <p className="text-zinc-300">
+              Tem certeza que deseja apagar esta chave?
+            </p>
+            
+            <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-center">
+              <code className="text-violet-400 font-mono text-sm">
+                {deletingLicense?.license_key}
+              </code>
+            </div>
+
+            <p className="text-xs text-zinc-500 bg-red-500/5 p-2 rounded border border-red-500/10">
+              Esta ação <strong className="text-red-400/80">NÃO</strong> pode ser desfeita.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDeleteLicense}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700 text-white min-w-[150px]"
+            >
+              {deleteLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Apagar definitivamente"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
