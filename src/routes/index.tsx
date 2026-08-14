@@ -706,6 +706,119 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Plus className="h-5 w-5 text-violet-400" />
+              Nova Chave
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 py-4">
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Nome do Cliente</Label>
+              <Input 
+                value={createFields.user_name}
+                onChange={e => setCreateFields(prev => ({ ...prev, user_name: e.target.value }))}
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                placeholder="Ex: João Silva (opcional)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Tipo de Licença</Label>
+              <Select 
+                value={createFields.license_type} 
+                onValueChange={v => setCreateFields(prev => ({ ...prev, license_type: v as any }))}
+              >
+                <SelectTrigger className="bg-zinc-950 border-zinc-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                  <SelectItem value="paid">Paga</SelectItem>
+                  <SelectItem value="trial">Trial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
+              <Checkbox 
+                id="create-lifetime" 
+                checked={createFields.lifetime}
+                onCheckedChange={checked => setCreateFields(prev => ({ ...prev, lifetime: !!checked }))}
+              />
+              <Label htmlFor="create-lifetime" className="text-sm font-medium leading-none cursor-pointer flex items-center gap-2">
+                <Infinity className="h-4 w-4 text-violet-400" />
+                Licença vitalícia (sem expiração)
+              </Label>
+            </div>
+
+            {!createFields.lifetime && (
+              <div className="space-y-4 p-4 rounded-xl bg-zinc-950 border border-zinc-800/50">
+                <div className="flex items-center gap-2 text-sm font-medium text-zinc-200 mb-1">
+                  <AlertCircle className="h-4 w-4 text-amber-400" />
+                  Duração
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-500">Dias</Label>
+                    <Input 
+                      type="number"
+                      min="0"
+                      value={createFields.expires_days}
+                      onChange={e => setCreateFields(prev => ({ ...prev, expires_days: parseInt(e.target.value) || 0 }))}
+                      className="bg-zinc-900 border-zinc-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-500">Minutos</Label>
+                    <Input 
+                      type="number"
+                      min="0"
+                      value={createFields.expires_minutes}
+                      onChange={e => setCreateFields(prev => ({ ...prev, expires_minutes: parseInt(e.target.value) || 0 }))}
+                      className="bg-zinc-900 border-zinc-800"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-500 italic">
+                  A licença expira em {createFields.expires_days} dias e {createFields.expires_minutes} minutos a partir da criação.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Chave personalizada</Label>
+              <Input 
+                value={createFields.custom_key}
+                onChange={e => setCreateFields(prev => ({ ...prev, custom_key: e.target.value }))}
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                placeholder="Deixe vazio para gerar automaticamente"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsCreateModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateLicense}
+              disabled={createLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {createLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Chave"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
