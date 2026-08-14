@@ -114,6 +114,11 @@ function Dashboard() {
     custom_key: ""
   });
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingLicense, setDeletingLicense] = useState<License | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const fetchLicenses = async () => {
     try {
       setIsTableLoading(true);
