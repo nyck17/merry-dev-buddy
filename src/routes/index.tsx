@@ -132,6 +132,22 @@ function Dashboard() {
   const [deletingLicense, setDeletingLicense] = useState<License | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Change Password Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordFields, setPasswordFields] = useState({
+    new_password: "",
+    confirm_password: ""
+  });
+
+  // Register Admin Modal State
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerFields, setRegisterFields] = useState({
+    email: "",
+    password: ""
+  });
+
   const fetchLicenses = async () => {
     try {
       setIsTableLoading(true);
