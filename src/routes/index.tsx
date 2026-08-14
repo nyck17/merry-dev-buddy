@@ -586,6 +586,10 @@ function Dashboard() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => {
+                              setDeletingLicense(license);
+                              setIsDeleteModalOpen(true);
+                            }}
                             className="h-8 w-8 text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
                           >
                             <Trash2 className="h-4 w-4" />
