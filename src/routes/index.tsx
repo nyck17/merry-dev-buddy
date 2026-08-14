@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -17,6 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { apiCall } from "@/lib/api";
 import { 
@@ -79,6 +88,45 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLicense, setEditingLicense] = useState<License | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFields, setEditFields] = useState({
+    user_name: "",
+    status: "active" as License['status'],
+    license_type: "paid" as License['license_type'],
+    lifetime: false,
+    expires_days: 0,
+    expires_minutes: 0,
+    clear_device: false
+  });
+
+  const fetchLicenses = async () => {
+    try {
+      setIsTableLoading(true);
+      const res = await apiCall("list_licenses", { search: "", status: "" });
+      if (res.ok) {
+        setLicenses(res.licenses);
+      }
+    } catch (err) {
+      console.error("Fetch licenses error:", err);
+    } finally {
+      setIsTableLoading(false);
+    }
+  };
+
+  const refreshStats = async () => {
+    try {
+      const res = await apiCall("stats", {});
+      if (res.ok) {
+        setStats(res.stats);
+      }
+    } catch (err) {
+      console.error("Stats error:", err);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     const email = localStorage.getItem("admin_email") || "";
@@ -93,7 +141,6 @@ function Dashboard() {
     const initDashboard = async () => {
       try {
         setIsTableLoading(true);
-        // Chamadas em paralelo
         const [meRes, statsRes, licensesRes] = await Promise.all([
           apiCall("me", {}),
           apiCall("stats", {}),
@@ -118,6 +165,65 @@ function Dashboard() {
 
     initDashboard();
   }, [navigate]);
+
+  const handleEditClick = async (license_key: string) => {
+    try {
+      setIsTableLoading(true);
+      const res = await apiCall("get_license", { license_key });
+      if (res.ok && res.license) {
+        const l = res.license;
+        setEditingLicense(l);
+        setEditFields({
+          user_name: l.user_name || "",
+          status: l.status,
+          license_type: l.license_type,
+          lifetime: l.lifetime,
+          expires_days: 0,
+          expires_minutes: 0,
+          clear_device: false
+        });
+        setIsEditModalOpen(true);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao carregar dados da licença");
+    } finally {
+      setIsTableLoading(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLicense) return;
+    
+    setEditLoading(true);
+    try {
+      const fields: any = {
+        user_name: editFields.user_name,
+        status: editFields.status,
+        license_type: editFields.license_type,
+        lifetime: editFields.lifetime
+      };
+
+      if (editFields.expires_days > 0) fields.expires_days = editFields.expires_days;
+      if (editFields.expires_minutes > 0) fields.expires_minutes = editFields.expires_minutes;
+      if (editFields.clear_device) fields.clear_device = true;
+
+      const res = await apiCall("update_license", { 
+        license_key: editingLicense.license_key, 
+        fields 
+      });
+
+      if (res.ok) {
+        toast.success("Chave atualizada!");
+        setIsEditModalOpen(false);
+        fetchLicenses();
+        refreshStats();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar licença");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -386,6 +492,7 @@ function Dashboard() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                            onClick={() => handleEditClick(license.license_key)}
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>
@@ -406,6 +513,139 @@ function Dashboard() {
           </div>
         </div>
       </main>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-violet-400" />
+              Editar Chave
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 py-4">
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Cliente</Label>
+              <Input 
+                value={editFields.user_name}
+                onChange={e => setEditFields(prev => ({ ...prev, user_name: e.target.value }))}
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                placeholder="Nome do cliente"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-zinc-400">Status</Label>
+                <Select 
+                  value={editFields.status} 
+                  onValueChange={v => setEditFields(prev => ({ ...prev, status: v as any }))}
+                >
+                  <SelectTrigger className="bg-zinc-950 border-zinc-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <SelectItem value="active">Ativa</SelectItem>
+                    <SelectItem value="suspended">Suspensa</SelectItem>
+                    <SelectItem value="inactive">Inativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-zinc-400">Tipo de Licença</Label>
+                <Select 
+                  value={editFields.license_type} 
+                  onValueChange={v => setEditFields(prev => ({ ...prev, license_type: v as any }))}
+                >
+                  <SelectTrigger className="bg-zinc-950 border-zinc-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <SelectItem value="paid">Paga</SelectItem>
+                    <SelectItem value="trial">Trial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
+              <Checkbox 
+                id="lifetime" 
+                checked={editFields.lifetime}
+                onCheckedChange={checked => setEditFields(prev => ({ ...prev, lifetime: !!checked }))}
+              />
+              <Label htmlFor="lifetime" className="text-sm font-medium leading-none cursor-pointer flex items-center gap-2">
+                <Infinity className="h-4 w-4 text-violet-400" />
+                Licença Vitalícia
+              </Label>
+            </div>
+
+            {!editFields.lifetime && (
+              <div className="space-y-4 p-4 rounded-xl bg-zinc-950 border border-zinc-800/50">
+                <div className="flex items-center gap-2 text-sm font-medium text-zinc-200 mb-1">
+                  <AlertCircle className="h-4 w-4 text-amber-400" />
+                  Nova Expiração
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-500">Adicionar dias</Label>
+                    <Input 
+                      type="number"
+                      min="0"
+                      value={editFields.expires_days}
+                      onChange={e => setEditFields(prev => ({ ...prev, expires_days: parseInt(e.target.value) || 0 }))}
+                      className="bg-zinc-900 border-zinc-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-500">Adicionar minutos</Label>
+                    <Input 
+                      type="number"
+                      min="0"
+                      value={editFields.expires_minutes}
+                      onChange={e => setEditFields(prev => ({ ...prev, expires_minutes: parseInt(e.target.value) || 0 }))}
+                      className="bg-zinc-900 border-zinc-800"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-500 italic">
+                  Deixe 0 em ambos para manter a data atual OU preencha para redefinir a partir de agora.
+                </p>
+              </div>
+            )}
+
+            {editingLicense?.device_id && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditFields(prev => ({ ...prev, clear_device: true }))}
+                className={`w-full justify-start gap-2 border-red-500/20 text-red-400 hover:bg-red-400/10 hover:text-red-400 transition-all ${editFields.clear_device ? 'bg-red-400/20 border-red-500/50' : ''}`}
+              >
+                <Laptop className="h-4 w-4" />
+                {editFields.clear_device ? "Dispositivo será desvinculado" : "Desvincular Dispositivo"}
+              </Button>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsEditModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={editLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[100px]"
+            >
+              {editLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
