@@ -286,6 +286,28 @@ function Dashboard() {
     }
   };
 
+  const handleDeleteLicense = async () => {
+    if (!deletingLicense) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await apiCall("delete_license", { 
+        license_key: deletingLicense.license_key 
+      });
+
+      if (res.ok) {
+        toast.success("Chave apagada!");
+        setIsDeleteModalOpen(false);
+        fetchLicenses();
+        refreshStats();
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao apagar: ${err.message || "Erro desconhecido"}`);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copiado para a área de transferência!");
