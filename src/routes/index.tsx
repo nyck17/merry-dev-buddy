@@ -297,13 +297,17 @@ function Dashboard() {
       });
 
       if (res.ok) {
-        toast.success("Chave apagada!");
+        toast.success("Chave apagada!", {
+          description: "A licença foi removida permanentemente."
+        });
         setIsDeleteModalOpen(false);
         fetchLicenses();
         refreshStats();
       }
     } catch (err: any) {
-      toast.error(`Erro ao apagar: ${err.message || "Erro desconhecido"}`);
+      toast.error("Falha ao apagar", {
+        description: err.message || "Erro desconhecido"
+      });
     } finally {
       setDeleteLoading(false);
     }
