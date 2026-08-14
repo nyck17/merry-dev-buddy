@@ -26,6 +26,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiCall } from "@/lib/api";
 import { 
@@ -42,7 +51,11 @@ import {
   Edit2,
   Trash2,
   ExternalLink,
-  Laptop
+  Laptop,
+  ShieldCheck,
+  Settings,
+  Lock,
+  UserPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
