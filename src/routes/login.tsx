@@ -103,11 +103,6 @@ function LoginComponent() {
               </div>
             </div>
 
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-md animate-in fade-in slide-in-from-top-1">
-                {error}
-              </div>
-            )}
           </CardContent>
           
           <CardFooter className="pb-8">

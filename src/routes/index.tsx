@@ -255,6 +255,7 @@ function Dashboard() {
       if (res.ok) {
         const newKey = res.license.license_key;
         toast.success("Chave criada com sucesso!", {
+          duration: 6000,
           action: {
             label: "Copiar chave",
             onClick: () => {
