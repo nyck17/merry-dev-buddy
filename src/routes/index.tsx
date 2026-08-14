@@ -55,7 +55,9 @@ import {
   ShieldCheck,
   Settings,
   Lock,
-  UserPlus
+  UserPlus,
+  RefreshCw,
+  Crown
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -441,6 +443,25 @@ function Dashboard() {
 
   if (isAuthenticated === false) return null;
   
+  if (criticalError) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="bg-red-500/10 p-4 rounded-full border border-red-500/20">
+          <AlertCircle className="h-10 w-10 text-red-400" />
+        </div>
+        <h2 className="text-xl font-bold text-zinc-100">Erro ao carregar o painel</h2>
+        <p className="text-zinc-400 max-w-xs">Houve um problema ao conectar com o servidor. Por favor, tente novamente.</p>
+        <Button 
+          onClick={initDashboard} 
+          className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -453,12 +474,12 @@ function Dashboard() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-full py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="bg-violet-600 p-1.5 rounded-lg">
               <Key className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight hidden sm:block">
+            <h1 className="text-xl font-bold tracking-tight">
               Painel de Licenças
             </h1>
           </div>
@@ -539,7 +560,7 @@ function Dashboard() {
       
       <main className="container mx-auto px-4 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard 
             title="Total de Chaves" 
             value={stats?.total || 0} 
@@ -616,9 +637,23 @@ function Dashboard() {
                 <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
               </div>
             ) : filteredLicenses.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-zinc-500 gap-2">
-                <AlertCircle className="h-8 w-8 opacity-20" />
-                <p>Nenhuma licença encontrada.</p>
+              <div className="h-64 flex flex-col items-center justify-center text-zinc-500 gap-4 px-4 text-center">
+                <div className="bg-zinc-800/50 p-4 rounded-full border border-zinc-700/50">
+                  <Key className="h-10 w-10 opacity-40 text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-zinc-300 font-medium">Nenhuma chave cadastrada ainda.</p>
+                  <p className="text-sm opacity-60">Clique em Nova Chave para começar.</p>
+                </div>
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="border-zinc-700 hover:bg-zinc-800"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Chave
+                </Button>
               </div>
             ) : (
               <Table>
@@ -686,18 +721,22 @@ function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {license.lifetime ? (
-                          <span className="text-violet-400 font-medium flex items-center gap-1.5">
-                            <Infinity className="h-3.5 w-3.5" />
-                            Vitalícia
-                          </span>
-                        ) : (
-                          <span className="text-zinc-400 text-sm">
-                            {license.expires_at 
-                              ? format(new Date(license.expires_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                              : "—"}
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {license.lifetime ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-violet-500/10 text-violet-400 border-violet-500/20 px-2 py-0 h-5 flex items-center gap-1">
+                                <Crown className="h-3 w-3" />
+                                Vitalícia
+                              </Badge>
+                            </div>
+                          ) : (
+                            <span className="text-zinc-400 text-sm">
+                              {license.expires_at 
+                                ? new Date(license.expires_at).toLocaleString("pt-BR")
+                                : "—"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-zinc-500 text-sm">
@@ -1088,6 +1127,59 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Register Admin Modal */}
+      <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-violet-400" />
+              Cadastrar Novo Admin
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                placeholder="exemplo@admin.com"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.email}
+                onChange={(e) => setRegisterFields({ ...registerFields, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.password}
+                onChange={(e) => setRegisterFields({ ...registerFields, password: e.target.value })}
+              />
+              <p className="text-xs text-zinc-500">Mínimo 6 caracteres.</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRegisterAdmin}
+              disabled={registerLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {registerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cadastrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Register Admin Modal */}
       <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
