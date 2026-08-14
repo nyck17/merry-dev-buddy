@@ -176,6 +176,40 @@ function Dashboard() {
     }
   };
 
+  const initDashboard = async () => {
+    try {
+      setIsLoading(true);
+      setCriticalError(false);
+      setIsTableLoading(true);
+      const [meRes, statsRes, licensesRes] = await Promise.all([
+        apiCall("me", {}),
+        apiCall("stats", {}),
+        apiCall("list_licenses", { search: "", status: "" })
+      ]);
+
+      if (meRes.ok && statsRes.ok) {
+        setIsAuthenticated(true);
+        setStats(statsRes.stats);
+      } else if (!meRes.ok) {
+        navigate({ to: "/login" });
+      } else {
+        setCriticalError(true);
+      }
+
+      if (licensesRes.ok) {
+        setLicenses(licensesRes.licenses);
+      } else {
+        setCriticalError(true);
+      }
+    } catch (err: any) {
+      console.error("Dashboard init error:", err);
+      setCriticalError(true);
+    } finally {
+      setIsLoading(false);
+      setIsTableLoading(false);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     const email = localStorage.getItem("admin_email") || "";
@@ -187,32 +221,19 @@ function Dashboard() {
       return;
     }
 
-    const initDashboard = async () => {
-      try {
-        setIsTableLoading(true);
-        const [meRes, statsRes, licensesRes] = await Promise.all([
-          apiCall("me", {}),
-          apiCall("stats", {}),
-          apiCall("list_licenses", { search: "", status: "" })
-        ]);
+    initDashboard();
 
-        if (meRes.ok && statsRes.ok) {
-          setIsAuthenticated(true);
-          setStats(statsRes.stats);
-        }
-
-        if (licensesRes.ok) {
-          setLicenses(licensesRes.licenses);
-        }
-      } catch (err: any) {
-        console.error("Dashboard init error:", err);
-      } finally {
-        setIsLoading(false);
-        setIsTableLoading(false);
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsEditModalOpen(false);
+        setIsCreateModalOpen(false);
+        setIsDeleteModalOpen(false);
+        setIsPasswordModalOpen(false);
+        setIsRegisterModalOpen(false);
       }
     };
-
-    initDashboard();
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, [navigate]);
 
   const handleEditClick = async (license_key: string) => {
