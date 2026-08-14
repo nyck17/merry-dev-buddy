@@ -406,7 +406,10 @@ function Dashboard() {
         {/* Content Area Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-zinc-200">Visão Geral</h2>
-          <Button className="bg-violet-600 hover:bg-violet-700 flex items-center gap-2">
+          <Button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-violet-600 hover:bg-violet-700 flex items-center gap-2"
+          >
             <Plus className="h-4 w-4" />
             Nova Chave
           </Button>
