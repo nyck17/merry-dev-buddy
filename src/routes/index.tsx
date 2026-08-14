@@ -230,13 +230,17 @@ function Dashboard() {
       });
 
       if (res.ok) {
-        toast.success("Chave atualizada!");
+        toast.success("Chave atualizada!", {
+          description: "As alterações foram salvas com sucesso."
+        });
         setIsEditModalOpen(false);
         fetchLicenses();
         refreshStats();
       }
     } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar licença");
+      toast.error("Erro na atualização", {
+        description: err.message || "Erro ao atualizar licença"
+      });
     } finally {
       setEditLoading(false);
     }
