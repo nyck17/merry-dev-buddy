@@ -26,6 +26,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { apiCall } from "@/lib/api";
 import { 
@@ -42,7 +51,11 @@ import {
   Edit2,
   Trash2,
   ExternalLink,
-  Laptop
+  Laptop,
+  ShieldCheck,
+  Settings,
+  Lock,
+  UserPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -118,6 +131,22 @@ function Dashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingLicense, setDeletingLicense] = useState<License | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Change Password Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordFields, setPasswordFields] = useState({
+    new_password: "",
+    confirm_password: ""
+  });
+
+  // Register Admin Modal State
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerFields, setRegisterFields] = useState({
+    email: "",
+    password: ""
+  });
 
   const fetchLicenses = async () => {
     try {
@@ -352,6 +381,64 @@ function Dashboard() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (passwordFields.new_password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (passwordFields.new_password !== passwordFields.confirm_password) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await apiCall("change_password", { new_password: passwordFields.new_password });
+      if (res.ok) {
+        toast.success("Senha alterada! Faça login novamente.");
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_email");
+        setIsPasswordModalOpen(false);
+        navigate({ to: "/login" });
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar senha");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleRegisterAdmin = async () => {
+    if (!registerFields.email.includes("@")) {
+      toast.error("E-mail inválido.");
+      return;
+    }
+    if (registerFields.password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    setRegisterLoading(true);
+    try {
+      const res = await apiCall("register_admin", registerFields);
+      if (res.ok) {
+        toast.success("Admin cadastrado!");
+        setIsRegisterModalOpen(false);
+        setRegisterFields({ email: "", password: "" });
+      }
+    } catch (err: any) {
+      if (err.message === "email_in_use") {
+        toast.error("Este email já está em uso.");
+      } else if (err.message === "invalid_data") {
+        toast.error("Dados inválidos.");
+      } else {
+        toast.error("Erro ao cadastrar.");
+      }
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
   if (isAuthenticated === false) return null;
   
   if (isLoading) {
@@ -393,14 +480,55 @@ function Dashboard() {
                 <span className="text-sm font-medium text-zinc-200">{adminEmail}</span>
                 <span className="text-xs text-zinc-500 italic">Administrador</span>
               </div>
-              <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-zinc-700">
-                <User className="h-5 w-5" />
-              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 overflow-hidden border border-zinc-700 bg-zinc-800 hover:bg-zinc-700">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-transparent text-zinc-400 font-medium uppercase">
+                        {adminEmail ? adminEmail.charAt(0) : <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-800 text-zinc-100" align="end" sideOffset={8}>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{adminEmail}</p>
+                      <p className="text-xs leading-none text-zinc-500 italic">Administrador</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem 
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="focus:bg-violet-500/10 focus:text-violet-400 cursor-pointer"
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    <span>Trocar senha</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setIsRegisterModalOpen(true)}
+                    className="focus:bg-violet-500/10 focus:text-violet-400 cursor-pointer"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Cadastrar novo admin</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="focus:bg-red-500/10 focus:text-red-400 cursor-pointer text-red-400"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair da conta</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={handleLogout}
-                className="text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+                className="text-zinc-400 hover:text-red-400 hover:bg-red-400/10 hidden sm:flex"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
@@ -906,6 +1034,108 @@ function Dashboard() {
               ) : (
                 "Apagar definitivamente"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Modal */}
+      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Lock className="h-5 w-5 text-violet-400" />
+              Trocar Senha
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Nova senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={passwordFields.new_password}
+                onChange={(e) => setPasswordFields({ ...passwordFields, new_password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmar senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={passwordFields.confirm_password}
+                onChange={(e) => setPasswordFields({ ...passwordFields, confirm_password: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsPasswordModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={passwordLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Register Admin Modal */}
+      <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-violet-400" />
+              Cadastrar Novo Admin
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                placeholder="exemplo@admin.com"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.email}
+                onChange={(e) => setRegisterFields({ ...registerFields, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                className="bg-zinc-950 border-zinc-800 focus-visible:ring-violet-500"
+                value={registerFields.password}
+                onChange={(e) => setRegisterFields({ ...registerFields, password: e.target.value })}
+              />
+              <p className="text-xs text-zinc-500">Mínimo 6 caracteres.</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRegisterAdmin}
+              disabled={registerLoading}
+              className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
+            >
+              {registerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cadastrar"}
             </Button>
           </DialogFooter>
         </DialogContent>
