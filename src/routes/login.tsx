@@ -30,16 +30,20 @@ function LoginComponent() {
       if (data.ok) {
         localStorage.setItem("admin_token", data.token);
         localStorage.setItem("admin_email", data.admin.email);
-        toast.success("Bem-vindo de volta!");
+        toast.success("Bem-vindo de volta!", {
+          description: `Logado como ${data.admin.email}`
+        });
         navigate({ to: "/" });
       } else {
         const msg = data.error === "invalid_credentials" 
           ? "Email ou senha incorretos." 
           : "Erro ao realizar login.";
-        setError(msg);
+        toast.error("Falha no acesso", { description: msg });
       }
     } catch (err: any) {
-      setError(err.message || "Erro de conexão com o servidor.");
+      toast.error("Erro de conexão", { 
+        description: err.message || "Não foi possível contatar o servidor." 
+      });
     } finally {
       setIsLoading(false);
     }
