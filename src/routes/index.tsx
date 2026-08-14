@@ -230,13 +230,17 @@ function Dashboard() {
       });
 
       if (res.ok) {
-        toast.success("Chave atualizada!");
+        toast.success("Chave atualizada!", {
+          description: "As alterações foram salvas com sucesso."
+        });
         setIsEditModalOpen(false);
         fetchLicenses();
         refreshStats();
       }
     } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar licença");
+      toast.error("Erro na atualização", {
+        description: err.message || "Erro ao atualizar licença"
+      });
     } finally {
       setEditLoading(false);
     }
@@ -255,6 +259,7 @@ function Dashboard() {
       if (res.ok) {
         const newKey = res.license.license_key;
         toast.success("Chave criada com sucesso!", {
+          duration: 6000,
           action: {
             label: "Copiar chave",
             onClick: () => {
@@ -296,13 +301,17 @@ function Dashboard() {
       });
 
       if (res.ok) {
-        toast.success("Chave apagada!");
+        toast.success("Chave apagada!", {
+          description: "A licença foi removida permanentemente."
+        });
         setIsDeleteModalOpen(false);
         fetchLicenses();
         refreshStats();
       }
     } catch (err: any) {
-      toast.error(`Erro ao apagar: ${err.message || "Erro desconhecido"}`);
+      toast.error("Falha ao apagar", {
+        description: err.message || "Erro desconhecido"
+      });
     } finally {
       setDeleteLoading(false);
     }
@@ -310,7 +319,10 @@ function Dashboard() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado para a área de transferência!");
+    toast.success("Chave copiada!", {
+      duration: 2000,
+      description: "A chave foi enviada para sua área de transferência."
+    });
   };
 
   const filteredLicenses = useMemo(() => {

@@ -17,12 +17,11 @@ function LoginComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const data = await apiCall("login", { email, password });
@@ -30,16 +29,20 @@ function LoginComponent() {
       if (data.ok) {
         localStorage.setItem("admin_token", data.token);
         localStorage.setItem("admin_email", data.admin.email);
-        toast.success("Bem-vindo de volta!");
+        toast.success("Bem-vindo de volta!", {
+          description: `Logado como ${data.admin.email}`
+        });
         navigate({ to: "/" });
       } else {
         const msg = data.error === "invalid_credentials" 
           ? "Email ou senha incorretos." 
           : "Erro ao realizar login.";
-        setError(msg);
+        toast.error("Falha no acesso", { description: msg });
       }
     } catch (err: any) {
-      setError(err.message || "Erro de conexão com o servidor.");
+      toast.error("Erro de conexão", { 
+        description: err.message || "Não foi possível contatar o servidor." 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -99,11 +102,6 @@ function LoginComponent() {
               </div>
             </div>
 
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-md animate-in fade-in slide-in-from-top-1">
-                {error}
-              </div>
-            )}
           </CardContent>
           
           <CardFooter className="pb-8">
