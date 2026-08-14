@@ -726,21 +726,39 @@ function Dashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {license.status === 'active' && (
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
-                            Ativa
-                          </Badge>
-                        )}
-                        {license.status === 'suspended' && (
-                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
-                            Suspensa
-                          </Badge>
-                        )}
-                        {license.status === 'inactive' && (
-                          <Badge className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/15">
-                            Inativa
-                          </Badge>
-                        )}
+                        {(() => {
+                          const isExpired = !license.lifetime && license.expires_at && new Date(license.expires_at) < new Date();
+                          
+                          if (isExpired) {
+                            return (
+                              <Badge className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/15">
+                                Expirada
+                              </Badge>
+                            );
+                          }
+
+                          if (license.status === 'active') {
+                            return (
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
+                                Ativa
+                              </Badge>
+                            );
+                          }
+                          
+                          if (license.status === 'suspended') {
+                            return (
+                              <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
+                                Suspensa
+                              </Badge>
+                            );
+                          }
+                          
+                          return (
+                            <Badge className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/15">
+                              Inativa
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
